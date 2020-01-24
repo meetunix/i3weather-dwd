@@ -2,6 +2,9 @@
 import urllib.request
 import csv
 import sys
+import os
+from time import sleep
+import resource as rsc
 
 # Quelle: Deutscher Wetterdienst
 DWD_POI_URL = "https://opendata.dwd.de/weather/weather_reports/poi/"
@@ -42,6 +45,49 @@ presentWeatherCodes ={
     "30" : ("Gewitter","kraeftiges Gewitter mit Hagel","heavy thunderstorm with hail"),
     "31" : ("Sturm","Boen","storm")}
 
+
+def daemonize():
+
+    WORKDIR = "/tmp"
+    UMASK = 0o077
+    REDIRECT_FD = "/dev/null"
+
+    try:
+        pid = os.fork()
+        if pid != 0:
+            sys.exit(0)
+        else:
+            os.setsid()
+            # second fork to be sure the process is no process group leader
+            pid = os.fork()
+            if pid != 0:
+                sys.exit(0)
+            else:
+                os.chdir(WORKDIR)
+                os.umask(UMASK)
+
+    except OSError as e:
+        sys.stderr.write("fork  failed: {} ({})\n".format(e.errno, e.strerror))
+
+    try: 
+        # close file descriptors (may) inherited by the parent process
+        maxFD = rsc.getrlimit(rsc.RLIMIT_NOFILE)[0]
+        for fd in range(maxFD):
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+    except OSError as e:
+        sys.stderr.write("closing fds failed: {} ({})\n".format(e.errno, e.strerror))
+
+    # redirect standard file descriptor
+    # get lowest descriptor name from os
+    os.open(REDIRECT_FD, os.O_RDWR)
+    # Duplicate standard input to standard output and standard error
+    os.dup2(0, 1)
+    os.dup2(0, 2)
+
+    return 
 
 def getFileFromUrl(url):
     response = urllib.request.urlopen(url)
@@ -87,12 +133,14 @@ def writeFile(vals, filePath):
     with open(filePath, "w") as f:
         f.write(s)
 
-def main():
+def parseArgs():
 
     station = sys.argv[1]
     if len(station) < 5:
         station +=  "_"
-    stationFileName = station + "-BEOB.csv"
+    return station + "-BEOB.csv"
+
+def main(statiionFileName):
 
     wf = getFileFromUrl(DWD_POI_URL + stationFileName)
     #wf = getTestFile()
@@ -100,11 +148,25 @@ def main():
         wff = wf.decode("utf_8").splitlines()
         csvReader = csv.reader(wff, delimiter=';')
         wff = [row for row in csvReader]
+        outValue = getValues(wff)
     else:
-        pass
-        #TODO
+        outValue = "NA"
 
-    writeFile(getValues(wff),"/tmp/i3weather-dwd")
+    writeFile(outValue,"/tmp/i3weather-dwd")
+    return
 
-main()
+stationFileName = parseArgs()
 
+if os.name == 'posix':
+    if os.getuid == 0 or os.geteuid == 0:
+        sys.stderr.write("Do not run this script as root user!")
+        sys.exit(1)
+
+    retVal = daemonize()
+    while True:
+        main(stationFileName)
+        sleep(1200)
+else:
+    sys.stderr.write("Only for unix and compatible")
+    sys.exit(1)
+    
