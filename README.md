@@ -22,28 +22,32 @@ or in english:
 
 
 
-T -> temperature in degree celsiusn 2 meter above surface. 
 
-H -> relative air humidity.
+T: temperature in degree celsiusn 2 meter above surface. 
 
-W -> average wind speed last hour.
+H: relative air humidity.
+
+W: average wind speed last hour.
 
 (meterological description)
 
 
 ## installation
 
-1. Clone the repository an make sure you have `python3 >= 3.4` and `i3status >= 2.13` installed.
+Clone the repository an make sure you have `python3 >= 3.4` and `i3status >= 2.13` installed.
+
 
     i3status -v
     i3status 2.13 © 2008 Michael Stapelberg and contributors
-
+    
     python3 --version
     Python 3.8.2
 
     git clone --depth=1 https://github.com/meetunix/i3weather-dwd.git
 
-2. Copy the executable (python script) to a location of your choice
+
+Copy the executable (python script) to a location of your choice.
+
 
     cp i3weather-dwd/i3weather-dwd.py /usr/local/bin/
 
@@ -89,7 +93,7 @@ Per default a pid-file is written to `/run/i3weather-dwd`.
 
 ### updating your i3status.conf
 
-Simply add the following lines to your config (`~/.i3status.conf) and reload i3.
+Simply add the following lines to your config (mostly `~/.i3status.conf`) and reload i3.
 
     order += "read_file weather"
 
