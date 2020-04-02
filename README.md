@@ -6,7 +6,7 @@ Service (Deutscher Wetterdienst).
 The DWD (Deutscher Wetterdienst) publishes most of its data on its
 [open data platform](https://www.dwd.de/DE/leistungen/opendata/opendata.html).
 
-In fact it isn't a plugin, but it uses the `read_file` module from i3status.
+In fact `i3weather-dwd` isn't a plugin, but it uses the `read_file` module from i3status.
 `i3weather-dwd` creates and updates the file `/tmp/i3weather-dwd` regularly and the
 `read_file` module will read the file on change.
 
@@ -23,7 +23,7 @@ or in english:
 
 
 
-T: temperature in degree celsiusn 2 meter above surface. 
+T: temperature in degree celsius (2 meter above surface). 
 
 H: relative air humidity.
 

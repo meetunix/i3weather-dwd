@@ -1,18 +1,32 @@
 #!/usr/bin/env python3
-import urllib.request
-import csv
-import sys
+
+""" i3weather-dwd
+
+i3status plugin for displaying weather information from the German Meteorological
+Service (Deutscher Wetterdienst) without external dependencies.
+
+Copyright © 2020 Martin Steinbach
+
+See file LICENSE for license information
+"""
+
 import os
+import sys
+import csv
+import urllib.request
 from time import sleep
 import resource as rsc
 
 # Quelle: Deutscher Wetterdienst
 DWD_POI_URL = "https://opendata.dwd.de/weather/weather_reports/poi/"
 
+# FILE_PATH: Path to the file where the weather information is stored.
+FILE_PATH = "/tmp/i3weather-dwd"
+
 #https://www.dwd.de/DE/leistungen/opendata/help/schluessel_datenformate/bufr/
 #poi_present_weather_zuordnung_pdf.pdf?__blob=publicationFile&v=2
 # code -> (shortDescr, detailDescr, englishDescr)
-presentWeatherCodes ={  
+PRESENT_WEATHER_CODES ={  
     "1" : ("wolkenlos","wolkenlos","clear"),
     "2" : ("heiter","heiter","bright"),
     "3" : ("bewölkt","bewoelkt","cloudy"),
@@ -71,8 +85,8 @@ def daemonize():
 
     try: 
         # close file descriptors (may) inherited by the parent process
-        maxFD = rsc.getrlimit(rsc.RLIMIT_NOFILE)[0]
-        for fd in range(maxFD):
+        max_fds = rsc.getrlimit(rsc.RLIMIT_NOFILE)[0]
+        for fd in range(max_fds):
             try:
                 os.close(fd)
             except OSError:
@@ -89,7 +103,7 @@ def daemonize():
 
     return 
 
-def getFileFromUrl(url):
+def get_file_from_url(url):
     response = urllib.request.urlopen(url)
     #print("returned status: {} - file size: {}".
     #    format(response.status,response.getheader("Content-Length")))
@@ -98,75 +112,80 @@ def getFileFromUrl(url):
     else:
         return response.read()
 
-def getTestFile():
+def get_test_file():
     fb = open(station,"rb")
     f = fb.read()
     fb.close()
     return f
 
-def checkDate(wff):
+def check_date(wff):
     return wff[3][0:2]
 
-def getDescrFromCode(code):
+def get_description(code):
     """Function returns the description of the present weather in german or english."""
     if code in [str(i) for i in range(32)]:
-        return(presentWeatherCodes[code][1])
+        return(PRESENT_WEATHER_CODES[code][1])
     else:
         return "NA"
 
-def getValues(wff):
+def get_values(wff):
     return { "temp" : wff[3][9] + ' °C',
              "cloud-cover" : wff[3][2]+' %',
              "visibility" : wff[3][14]+' km',
              "maxwind" : wff[3][18]+' km/h',
              "wind-direction" : wff[3][22]+' °',
              "precipitation" : wff[3][33]+' mm',
-             "weather" : getDescrFromCode(wff[3][35]),
+             "weather" : get_description(wff[3][35]),
              "pressure" : wff[3][36]+' hPa',
              "humidity" : wff[3][37]+' %',
             }
 
-def writeFile(vals, filePath):
+def write_file(vals, file_path):
     s = "{} T: {}  H: {}  W: {} ({})".format( "CURR",vals["temp"],vals["humidity"],
                      vals["maxwind"],vals["weather"])
 
-    with open(filePath, "w") as f:
+    with open(file_path, "w") as f:
         f.write(s)
 
-def parseArgs():
+def parse_args(args):
 
-    station = sys.argv[1]
+    station = args[1]
     if len(station) < 5:
         station +=  "_"
     return station + "-BEOB.csv"
 
-def main(statiionFileName):
+def main(station_file_name):
 
-    wf = getFileFromUrl(DWD_POI_URL + stationFileName)
-    #wf = getTestFile()
+    wf = get_file_from_url(DWD_POI_URL + station_file_name)
+    #wf = get_test_file()
     if wf != None:
         wff = wf.decode("utf_8").splitlines()
-        csvReader = csv.reader(wff, delimiter=';')
-        wff = [row for row in csvReader]
-        outValue = getValues(wff)
+        csv_reader = csv.reader(wff, delimiter=';')
+        wff = [row for row in csv_reader]
+        output_value = get_values(wff)
     else:
-        outValue = "NA"
+        output_value = "NA"
 
-    writeFile(outValue,"/tmp/i3weather-dwd")
+    write_file(output_value,"/tmp/i3weather-dwd")
     return
 
-stationFileName = parseArgs()
 
-if os.name == 'posix':
-    if os.getuid == 0 or os.geteuid == 0:
-        sys.stderr.write("Do not run this script as root user!")
+def main(args):
+
+    station_file_name = parse_args(args)
+
+    if os.name == 'posix':
+        if os.getuid == 0 or os.geteuid == 0:
+            sys.stderr.write("Do not run this script as root user!")
+            sys.exit(1)
+
+        ret_val = daemonize()
+        while True:
+            main(station_file_name)
+            sleep(1200)
+    else:
+        sys.stderr.write("Only for unix and compatible")
         sys.exit(1)
-
-    retVal = daemonize()
-    while True:
-        main(stationFileName)
-        sleep(1200)
-else:
-    sys.stderr.write("Only for unix and compatible")
-    sys.exit(1)
     
+if __name__ == "__main__":
+    main(sys.argv[1])
