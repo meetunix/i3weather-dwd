@@ -10,7 +10,7 @@ In fact `i3weather-dwd` isn't a plugin, but it uses the `read_file` module from 
 `i3weather-dwd` creates and updates the file `/tmp/i3weather-dwd` regularly and the
 `read_file` module will read the file on change.
 
-`i3weather-dwd` runs as a daemon an may be controlled by systemd.
+`i3weather-dwd` could run as a **daemon** or may be invoked by **cron**.
 
 The Information is displayed in the following manner:
 
@@ -34,7 +34,7 @@ W: average wind speed last hour.
 
 ## installation
 
-Clone the repository an make sure you have `python3 >= 3.4` and `i3status >= 2.13` installed.
+Clone the repository an make sure you have `python3 >= 3.5` and `i3status >= 2.13` installed.
 
 
     i3status -v
@@ -63,7 +63,7 @@ find the same information on their
 
 
 You have the choice beetween a live lookup using the `station-lookup.py` script, or
-searching a generated snapshot of the weather stations in (stations.md)[stations.md].
+searching a generated snapshot of the weather stations in [stations.md](stations.md).
 
 
 Using the live lookup is very easy. If there is no station in your town, maybe there is
@@ -78,18 +78,20 @@ one in the neighbouring town.
 The station id for the weather station located in Warnemünde is 10170.
 
 
-### start without systemd
+### running i3weather-dwd once or with cron 
 
-If you want to start the `i3weather-dwd` daemon without systemd, just run it.
+If you want to start the `i3weather-dwd` a single time, just run it.
 
-    /usr/local/bin/i3weather-dwd.py STATION-ID
-
-Per default a pid-file is written to `/run/i3weather-dwd`. 
+    /usr/local/bin/i3weather-dwd.py -s STATION-ID
 
 
-### create a systemd unit file
+Maybe you want to use cron for regulary updates
 
-...
+    */20 * * * *    /usr/local/bin/i3weather-dwd.py -s STATION-ID
+
+That means: every 20 minutes an update is performed.
+
+
 
 ### updating your i3status.conf
 
@@ -105,17 +107,24 @@ Simply add the following lines to your config (mostly `~/.i3status.conf`) and re
         path = "/tmp/i3weather-dwd"
     }
 
-It is done, `i3weather-dwd` will look every 20 minutes for changes.
-
 
 ### command line options
     
     # mandatory
 
-    -s      Integer     Station-ID
+    -s --station    STRING      Station-ID
 
     # optional
 
-    -p      PATH        alternate path to the pid
-    -g                  flag, meterological description is displayed in german
+    -d --daemon     FLAG        run as daemon (experimental)
+    -p --pid        STRING      alternate path to the pid
 
+    -g --german     FLAG        meterological description is displayed in german
+
+### running as a daemon (experimental)
+
+...
+
+#### using systemd
+
+...

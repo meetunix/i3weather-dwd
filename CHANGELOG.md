@@ -8,10 +8,10 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.1.0] - 2020-04-02
 
 ### Added
-- paramater for pid creation 
+- paramater for alternate pid creation 
 
 ### Changed
 - syntax is now more PEP-8 compatible 
 
 ### Fixed
-- station lookup with german umlauts is now possible
+- station lookup with german umlauts and the sharp s is now possible
