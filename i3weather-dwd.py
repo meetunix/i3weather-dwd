@@ -14,6 +14,7 @@ import os
 import sys
 import csv
 import argparse
+import signal
 import urllib.request
 import resource as rsc
 from time import sleep
@@ -26,7 +27,7 @@ DWD_POI_URL = "https://opendata.dwd.de/weather/weather_reports/poi/"
 FILE_PATH = "/tmp/i3weather-dwd"
 
 # Default path to pid file if no argument is passed to --pid:
-PID_DEFAULT = "/tmp/i3weather.pid"
+PID_DEFAULT = "/tmp/i3weather-dwd.pid"
 
 #https://www.dwd.de/DE/leistungen/opendata/help/schluessel_datenformate/bufr/
 #poi_present_weather_zuordnung_pdf.pdf?__blob=publicationFile&v=2
@@ -67,7 +68,7 @@ PRESENT_WEATHER_CODES ={
 def daemonize():
 
     WORKDIR = "/tmp"
-    UMASK = 0o077
+    UMASK = 0o033
     REDIRECT_FD = "/dev/null"
 
     try:
@@ -102,7 +103,6 @@ def run_as_daemon(config):
         sys.exit(-1)
     else:
         pid = daemonize()
-        print("started with pid {}".format(pid))
         pid_path.write_text(str(pid))
 
     return pid
@@ -113,7 +113,7 @@ def get_file_from_url(url):
         #print("returned status: {} - file size: {}".
         #    format(response.status,response.getheader("Content-Length")))
     except urllib.error.HTTPError as e:
-        sys.stderr.write("HTTP-Error -> Maybe the station id is incorrect\n")
+        sys.stderr.write("HTTP-Error -> maybe the station id is incorrect\n")
         sys.exit(-1)
     
     return response.read()

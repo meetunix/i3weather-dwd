@@ -123,8 +123,39 @@ Simply add the following lines to your config (mostly `~/.i3status.conf`) and re
 
 ### running as a daemon (experimental)
 
-...
+You are able to run `i3weather-dwd` as a daemon. The prefered way is the use
+of **systemd**. But you can also start it like this:
+
+    /usr/local/bin/i3weather-dwd.py -s STATION-ID -d
+    
 
 #### using systemd
 
-...
+Copy the following [file](contrib/i3weather-dwd.service) to
+`/etc/systemd/system/i3weather-dwd.service` and change the user and group names under
+which the service has to be started.
+
+    [Unit]
+    Description=i3weather-dwd
+
+    [Service]
+    User=USERNAME
+    Group=GROUPNAME
+    Type=forking
+    ExecStart=/usr/local/bin/i3weather-dwd.py -s 10170 -d
+    PIDFile=/tmp/i3weather-dwd.pid
+    TimeoutStartSec=5
+
+    [Install]
+    WantedBy=multi-user.target
+
+Then start and enable the service.
+
+
+    sudo systemctl daemon-reload
+    
+    sudo systemctl start i3weather-dwd.service
+    
+    sudo systemctl enable i3weather-dwd.service
+
+Have fun!

@@ -1,0 +1,13 @@
+[Unit]
+Description=i3weather-dwd
+
+[Service]
+User=USERNAME
+Group=GROUPNAME
+Type=forking
+ExecStart=/usr/local/bin/i3weather-dwd.py -s 10170 -d
+PIDFile=/tmp/i3weather-dwd.pid
+TimeoutStartSec=5
+
+[Install]
+WantedBy=multi-user.target
