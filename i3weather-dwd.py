@@ -139,19 +139,21 @@ def get_description(code,config):
         return "NA"
 
 def get_values(wff,config):
-    return { "temp" : wff[3][9] + ' °C',
-             "cloud-cover" : wff[3][2]+' %',
-             "visibility" : wff[3][14]+' km',
-             "maxwind" : wff[3][18]+' km/h',
-             "wind-direction" : wff[3][22]+' °',
-             "precipitation" : wff[3][33]+' mm',
-             "weather" : get_description(wff[3][35],config),
-             "pressure" : wff[3][36]+' hPa',
-             "humidity" : wff[3][37]+' %',
+    return { 
+                "time" : wff[3][1] +' (UTC)', # TODO: time offset for lokal time 
+                "temp" : wff[3][9] + ' °C',
+                "cloud-cover" : wff[3][2]+' %',
+                "visibility" : wff[3][14]+' km',
+                 "maxwind" : wff[3][18]+' km/h',
+                 "wind-direction" : wff[3][22]+' °',
+                 "precipitation" : wff[3][33]+' mm',
+                 "weather" : get_description(wff[3][35],config),
+                 "pressure" : wff[3][36]+' hPa',
+                 "humidity" : wff[3][37]+' %',
             }
 
 def write_file(vals, file_path):
-    s = "{} T: {}  H: {}  W: {} ({})".format( "CURR",vals["temp"],vals["humidity"],
+    s = "{} T: {}  H: {}  W: {} ({})".format( vals["time"],vals["temp"],vals["humidity"],
                      vals["maxwind"],vals["weather"])
 
     with open(file_path, "w") as f:
