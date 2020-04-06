@@ -14,11 +14,11 @@ In fact `i3weather-dwd` isn't a plugin, but it uses the `read_file` module from 
 
 The Information is displayed in the following manner:
 
-    T: 6,5 °C  H: 78 %  W: 28 km/h (bedeckt)
+    10:00 (UTC) T: 6,5 °C  H: 78 %  W: 28 km/h (bedeckt)
 
 or in english:
 
-    T: 6,5 °C  H: 78 %  W: 28 km/h (overcast)
+    10:00 (UTC) T: 6,5 °C  H: 78 %  W: 28 km/h (overcast)
 
 
 
