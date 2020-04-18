@@ -78,12 +78,12 @@ def daemonize():
         else:
             os.setsid()
             # second fork to be sure the process is no process group leader
-            pid = os.fork()
-            if pid != 0:
-                sys.exit(0)
-            else:
-                os.chdir(WORKDIR)
-                os.umask(UMASK)
+    #        pid = os.fork()
+    #        if pid != 0:
+    #            sys.exit(0)
+    #        else:
+            os.chdir(WORKDIR)
+            os.umask(UMASK)
 
     except OSError as e:
         sys.stderr.write("fork  failed: {} ({})\n".format(e.errno, e.strerror))
@@ -113,9 +113,12 @@ def get_file_from_url(url):
         #print("returned status: {} - file size: {}".
         #    format(response.status,response.getheader("Content-Length")))
     except urllib.error.HTTPError as e:
-        sys.stderr.write("HTTP-Error -> maybe the station id is incorrect\n")
+        sys.stdout.write("HTTP-Error: maybe the station id is incorrect\n")
         sys.exit(-1)
-    
+    except urllib.error.URLError as e:
+        sys.stdout.write("URL-Error: maybe internet connection is not yet established\n")
+        raise
+        
     return response.read()
 
 def get_test_file():
@@ -153,11 +156,21 @@ def get_values(wff,config):
             }
 
 def write_file(vals, file_path):
-    s = "{} T: {}  H: {}  W: {} ({})".format( vals["time"],vals["temp"],vals["humidity"],
-                     vals["maxwind"],vals["weather"])
+    s = "{} T: {}  H: {}  W: {} ({})".format(
+            vals["time"],
+            vals["temp"],
+            vals["humidity"],
+            vals["maxwind"],
+            vals["weather"]
+            )
 
     with open(file_path, "w") as f:
         f.write(s)
+
+def write_error(err_string, file_path):
+    
+    with open(file_path, "w") as f:
+        f.write(err_string)
 
 def parse_args():
 
@@ -197,18 +210,24 @@ def parse_args():
 
 def read_weather(config):
 
-    wf = get_file_from_url(DWD_POI_URL + config['station_file'])
-    #wf = get_test_file()
+    is_ok = True
+
+    try:
+        wf = get_file_from_url(DWD_POI_URL + config['station_file'])
+        #wf = get_test_file()
+    except urllib.error.URLError:
+        wf = None
+        is_ok = False
+
     if wf != None:
         wff = wf.decode("utf_8").splitlines()
         csv_reader = csv.reader(wff, delimiter=';')
         wff = [row for row in csv_reader]
-        output_value = get_values(wff,config)
+        write_file(get_values(wff,config),FILE_PATH)
     else:
-        output_value = "NA"
+        write_error("service not available retrying ...",FILE_PATH)
 
-    write_file(output_value,FILE_PATH)
-    return
+    return is_ok
 
 def main():
     
@@ -221,14 +240,17 @@ def main():
             sys.exit(1)
 
         if config['daemon']:
-            print("daemonize it ...")
             run_as_daemon(config)
             while True:
-                read_weather(config)
-                sleep(1200)
+                if read_weather(config):
+                    sleep(1200)
+                else:
+                    while not read_weather(config):
+                        sys.stderr.write("could not retrieve weather information,"
+                                + " retrying ...\n")
+                        sleep(60)
         else:
                 read_weather(config)
-
     else:
         sys.stderr.write("Only for unix and compatible.\n")
         sys.exit(1)
